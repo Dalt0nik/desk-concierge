@@ -164,9 +164,9 @@ void loop() {
     lastSensorRead = millis();
     // KY-032: LOW = obstacle detected = occupied
     String status = (digitalRead(SENSOR_PIN) == LOW) ? "occupied" : "free";
-    if (status != lastStatus) {
+    if (status == "occupied") {
       lastStatus = status;
-      setLed(status == "occupied" ? "red" : "green");
+      setLed("red");
       client.publish(status_topic, status.c_str(), true);
       appendLog("Status -> " + status);
     }
