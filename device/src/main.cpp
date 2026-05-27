@@ -1,339 +1,231 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <esp_wifi.h>
-#include <esp_wpa2.h>
-#include <WebServer.h>
+#include "esp_wpa2.h"
+#include "esp_wifi.h"
 #include <ArduinoOTA.h>
-#include <esp_system.h>
+#include <WebServer.h>
 #include <PubSubClient.h>
-#include "config.h"
 
-// ── Sensor & LED pins ─────────────────────────────────────────────────────────
+const char* ssid = "DB-CTS-WORK";
+const char* password = "jq87427@";
+const char* mqtt_server = "10.6.10.36"; 
+const int mqtt_port = 1883;
+const char* publish_topic = "esp32/hackathon/data";
+
+// pins
+const int ledPin23 = 23;
+
+// Sensor & LED pins
 #define SENSOR_PIN  14   // KY-032 OUT → LOW when obstacle (occupied)
 #define LED_PIN_R   25
 #define LED_PIN_Y   26
 #define LED_PIN_G   27
 
-// ── Globals ───────────────────────────────────────────────────────────────────
-WebServer    server(WEB_SERVER_PORT);
-WiFiClient   wifiClient;
-PubSubClient mqtt(wifiClient);
+// for wpa
+#define EAP_IDENTITY "hakatonas.2026@devbridge.com"
+#define EAP_USERNAME "hakatonas.2026@devbridge.com"
+#define EAP_PASSWORD "H@katon@Devbridgge26"
 
-unsigned long lastMqttReconnect = 0;
-unsigned long lastTempLog        = 0;
-unsigned long lastSensorRead     = 0;
-String        lastStatus         = "";
+extern "C" uint8_t temprature_sens_read();
+
+WebServer server(80);
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+unsigned long lastMsg = 0;
+int value = 0;
+unsigned long lastSensorRead = 0;
+String lastStatus = "";
+
+String logs = "";
+
+void appendLog(String message) {
+  logs += message + "\n";
+  if (logs.length() > 4000) {
+    logs = logs.substring(logs.length() - 4000);
+  }
+}
 
 void setLed(const String& color) {
-    digitalWrite(LED_PIN_R, color == "red"    ? HIGH : LOW);
-    digitalWrite(LED_PIN_Y, color == "yellow" ? HIGH : LOW);
-    digitalWrite(LED_PIN_G, color == "green"  ? HIGH : LOW);
-    logger.log("LED -> " + color);
+  digitalWrite(LED_PIN_R, color == "red"    ? HIGH : LOW);
+  digitalWrite(LED_PIN_Y, color == "yellow" ? HIGH : LOW);
+  digitalWrite(LED_PIN_G, color == "green"  ? HIGH : LOW);
+  appendLog("LED -> " + color);
 }
 
-// ── Logger ────────────────────────────────────────────────────────────────────
-// Circular buffer — oldest entry is silently overwritten when full.
-// Usage:  logger.log("something happened");
-//         logger.log("value: " + String(val));
-// View:   http://<ip>/log  (auto-refreshes every 5 s)
-// Clear:  http://<ip>/log/clear
+void reconnect();
+void callback(char* topic, byte* payload, unsigned int length);
 
-#define LOG_MAX_ENTRIES  50
-#define LOG_ENTRY_LEN    96   // max chars per message (truncated if longer)
+void setupWiFi() {
+  Serial.begin(115200);
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
 
-struct LogEntry {
-    unsigned long ms;
-    char          msg[LOG_ENTRY_LEN];
-};
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_STA);
 
-class Logger {
-public:
-    void log(const String& msg) {
-        LogEntry& e = _buf[_head];
-        e.ms = millis();
-        msg.substring(0, LOG_ENTRY_LEN - 1).toCharArray(e.msg, LOG_ENTRY_LEN);
-        _head = (_head + 1) % LOG_MAX_ENTRIES;
-        if (_count < LOG_MAX_ENTRIES) _count++;
-        Serial.printf("[LOG] %s\n", e.msg);
-    }
+// enable below code for WPA:
 
-    // Write all entries oldest-first into a String for the web page
-    String toHtml() const {
-        String out;
-        out.reserve(_count * (LOG_ENTRY_LEN + 40));
-        int oldest = (_count < LOG_MAX_ENTRIES) ? 0 : _head;
-        for (int i = 0; i < _count; i++) {
-            const LogEntry& e = _buf[(oldest + i) % LOG_MAX_ENTRIES];
-            unsigned long s  = e.ms / 1000;
-            unsigned long ms = e.ms % 1000;
-            out += "<tr><td>" + String(s) + "." + (ms < 100 ? "0" : "") + (ms < 10 ? "0" : "") + String(ms) + "s</td><td>";
-            out += htmlEscape(e.msg);
-            out += "</td></tr>\n";
-        }
-        return out;
-    }
+  esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)EAP_IDENTITY, strlen(EAP_IDENTITY));
+  esp_wifi_sta_wpa2_ent_set_username((uint8_t *)EAP_USERNAME, strlen(EAP_USERNAME));
+  esp_wifi_sta_wpa2_ent_set_password((uint8_t *)EAP_PASSWORD, strlen(EAP_PASSWORD));
+  
+  esp_wifi_sta_wpa2_ent_enable(); 
+  WiFi.begin(ssid);
 
-    void clear() { _head = 0; _count = 0; }
-    int  count() const { return _count; }
+ // WiFi.begin(ssid, password);
 
-private:
-    static String htmlEscape(const char* s) {
-        String out;
-        while (*s) {
-            switch (*s) {
-                case '<': out += "&lt;";  break;
-                case '>': out += "&gt;";  break;
-                case '&': out += "&amp;"; break;
-                default:  out += *s;
-            }
-            s++;
-        }
-        return out;
-    }
-
-    LogEntry _buf[LOG_MAX_ENTRIES];
-    int      _head  = 0;
-    int      _count = 0;
-} logger;
-
-// ── WiFi ──────────────────────────────────────────────────────────────────────
-void connectWiFi() {
-    Serial.printf("\n[WiFi] Connecting to %s (WPA2 Enterprise)\n", WIFI_SSID);
-    WiFi.disconnect(true);
-    WiFi.mode(WIFI_STA);
-    WiFi.setHostname(WIFI_HOSTNAME);
-/*
-    esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)WPA2_IDENTITY, strlen(WPA2_IDENTITY));
-    esp_wifi_sta_wpa2_ent_set_username((uint8_t *)WPA2_USERNAME, strlen(WPA2_USERNAME));
-    esp_wifi_sta_wpa2_ent_set_password((uint8_t *)WPA2_PASSWORD, strlen(WPA2_PASSWORD));
-    esp_wifi_sta_wpa2_ent_enable();
-
-    WiFi.begin(WIFI_SSID);
-*/
-
-    // ── WPA2 Personal / PSK alternative (comment out the block above and
-    //    uncomment this line if your network uses a plain password instead) ───
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-    unsigned long start = millis();
-    while (WiFi.status() != WL_CONNECTED) {
-        if (millis() - start > WIFI_TIMEOUT_MS) {
-            Serial.println("\n[WiFi] Timeout — restarting");
-            ESP.restart();
-        }
-        delay(500);
-        Serial.print(".");
-    }
-    Serial.printf("\n[WiFi] Connected | IP: %s\n", WiFi.localIP().toString().c_str());
-    logger.log("WiFi connected, IP: " + WiFi.localIP().toString());
-}
-
-// ── ArduinoOTA ────────────────────────────────────────────────────────────────
-void setupOTA() {
-    ArduinoOTA.setHostname(WIFI_HOSTNAME);
-   // ArduinoOTA.setPassword(OTA_PASSWORD);
-
-    ArduinoOTA.onStart([]() {
-        String type = (ArduinoOTA.getCommand() == U_FLASH) ? "firmware" : "filesystem";
-        logger.log("OTA started: " + type + " update");
-        mqtt.publish(MQTT_TOPIC_STATUS, "ota-start", true);
-    });
-
-    ArduinoOTA.onProgress([](unsigned int current, unsigned int total) {
-        Serial.printf("[OTA] Progress: %u%%\r", (current * 100) / total);
-    });
-
-    ArduinoOTA.onEnd([]() {
-        logger.log("OTA complete, rebooting");
-        mqtt.publish(MQTT_TOPIC_STATUS, "ota-done", true);
-    });
-
-    ArduinoOTA.onError([](ota_error_t error) {
-        const char* msg;
-        switch (error) {
-            case OTA_AUTH_ERROR:    msg = "Auth failed";    break;
-            case OTA_BEGIN_ERROR:   msg = "Begin failed";   break;
-            case OTA_CONNECT_ERROR: msg = "Connect failed"; break;
-            case OTA_RECEIVE_ERROR: msg = "Receive failed"; break;
-            case OTA_END_ERROR:     msg = "End failed";     break;
-            default:                msg = "Unknown error";  break;
-        }
-        logger.log(String("OTA error: ") + msg);
-        mqtt.publish(MQTT_TOPIC_STATUS, "ota-failed", true);
-    });
-
-    ArduinoOTA.begin();
-    logger.log("OTA ready, hostname: " + String(WIFI_HOSTNAME));
-}
-
-// ── MQTT ──────────────────────────────────────────────────────────────────────
-void onMqttMessage(char* topic, byte* payload, unsigned int length) {
-    String msg;
-    msg.reserve(length);
-    for (unsigned int i = 0; i < length; i++) msg += (char)payload[i];
-
-    Serial.printf("[MQTT] <- [%s] %s\n", topic, msg.c_str());
-    logger.log("MQTT <- [" + String(topic) + "] " + msg);
-
-    // LED color command from server
-    if (msg == "red" || msg == "yellow" || msg == "green") {
-        setLed(msg);
-        return;
-    }
-    if (msg == "ping") {
-        mqtt.publish(MQTT_TOPIC_STATUS, "pong");
-    }
-}
-
-bool mqttConnect() {
-    Serial.printf("[MQTT] Connecting to %s:%d ...\n", MQTT_BROKER, MQTT_PORT);
-
-    bool ok = (strlen(MQTT_USER) > 0)
-        ? mqtt.connect(MQTT_CLIENT_ID, MQTT_USER, MQTT_PASSWORD, MQTT_TOPIC_STATUS, 1, true, "offline")
-        : mqtt.connect(MQTT_CLIENT_ID, nullptr, nullptr,          MQTT_TOPIC_STATUS, 1, true, "offline");
-
-    if (ok) {
-        logger.log("MQTT connected to " + String(MQTT_BROKER));
-        mqtt.publish(MQTT_TOPIC_STATUS, "online", true);
-        mqtt.subscribe(MQTT_TOPIC_SUB);
-    } else {
-        logger.log("MQTT failed, rc=" + String(mqtt.state()));
-    }
-    return ok;
-}
-
-void handleMqtt() {
-    if (mqtt.connected()) {
-        mqtt.loop();
-        return;
-    }
-    if (millis() - lastMqttReconnect >= MQTT_RECONNECT_MS) {
-        lastMqttReconnect = millis();
-        mqttConnect();
-    }
-}
-
-// ── Web Server ────────────────────────────────────────────────────────────────
-static const char PAGE_STYLE[] = R"css(
-  body{font-family:monospace;background:#111;color:#0f0;padding:2rem;max-width:700px;margin:auto}
-  h1{letter-spacing:.1em}
-  table{width:100%;border-collapse:collapse;margin:1rem 0}
-  td{padding:.4rem .8rem;border:1px solid #0f04;vertical-align:top}
-  td:first-child{color:#0f08;white-space:nowrap;width:7rem}
-  a{color:#0f0;text-decoration:none;border:1px solid #0f0;padding:.3rem .8rem;display:inline-block;margin:.3rem}
-  a:hover{background:#0f0;color:#111}
-)css";
-
-void handleRoot() {
-    String html = String("<!DOCTYPE html><html><head>"
-        "<meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
-        "<title>ESP32 Device</title><style>") + PAGE_STYLE + "</style></head><body>"
-        "<h1>&#x2665; ESP32 Device</h1>"
-        "<table>"
-        "<tr><td>Hostname</td><td>" + WIFI_HOSTNAME + "</td></tr>"
-        "<tr><td>IP</td><td>" + WiFi.localIP().toString() + "</td></tr>"
-        "<tr><td>RSSI</td><td>" + String(WiFi.RSSI()) + " dBm</td></tr>"
-        "<tr><td>Free Heap</td><td>" + String(ESP.getFreeHeap()) + " bytes</td></tr>"
-        "<tr><td>Uptime</td><td>" + String(millis() / 1000) + " s</td></tr>"
-        "<tr><td>MQTT</td><td>" + (mqtt.connected() ? "connected" : "disconnected") + "</td></tr>"
-        "</table>"
-        "<a href='/log'>&#x1F4CB; Log</a>"
-        "<a href='/reset'>&#x21ba; Restart</a>"
-        "</body></html>";
-    server.send(200, "text/html", html);
-}
-
-void handleLog() {
-    String html = String("<!DOCTYPE html><html><head>"
-        "<meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
-        "<meta http-equiv='refresh' content='5'>"
-        "<title>ESP32 Log</title><style>") + PAGE_STYLE + "</style></head><body>"
-        "<h1>&#x1F4CB; Log <small style='font-size:.5em;color:#0f08'>(" + String(logger.count()) + "/" + String(LOG_MAX_ENTRIES) + " entries, auto-refresh 5s)</small></h1>"
-        "<table>" + logger.toHtml() + "</table>"
-        "<a href='/log/clear'>&#x2715; Clear</a>"
-        "<a href='/'>&#x2190; Back</a>"
-        "</body></html>";
-    server.send(200, "text/html", html);
-}
-
-void handleLogClear() {
-    logger.clear();
-    logger.log("Log cleared");
-    server.sendHeader("Location", "/log");
-    server.send(302, "text/plain", "");
-}
-
-void handleReset() {
-    logger.log("Restart requested via web");
-    server.send(200, "text/plain", "Restarting...");
+  while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    ESP.restart();
+    Serial.print(".");
+  }
+
+  Serial.println("\nWiFi connected");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
 }
 
-void handleNotFound() {
-    server.send(404, "text/plain", "Not found");
+void setupOTA() {
+  // Port defaults to 3232, but you can change it
+  ArduinoOTA.setPort(3232);
+
+  // Hostname defaults to esp3232-[MAC]
+  ArduinoOTA.setHostname("esp32-hackaton_2");
+
+  // No authentication by default (optional)
+  // ArduinoOTA.setPassword("admin");
+
+  ArduinoOTA.onStart([]() {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH)
+      type = "sketch";
+    else // U_SPIFFS
+      type = "filesystem";
+    Serial.println("Start updating " + type);
+  });
+  
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
+
+  ArduinoOTA.begin();
 }
 
-void setupWebServer() {
-    server.on("/",          handleRoot);
-    server.on("/log",       handleLog);
-    server.on("/log/clear", handleLogClear);
-    server.on("/reset",     handleReset);
-    server.onNotFound(handleNotFound);
-    server.begin();
-    Serial.printf("[Web] Server on port %d\n", WEB_SERVER_PORT);
+// Webserver to print log messages to.
+void setUpWebServer() {
+  server.on("/", [] (){
+    server.send(200, "text/plain", logs);
+  });
+  server.begin();
 }
 
-// ── Arduino entry points ──────────────────────────────────────────────────────
 void setup() {
-    Serial.begin(115200);
+  setupWiFi();
+  setupOTA();
+  setUpWebServer();
+  client.setServer(mqtt_server, mqtt_port);
+  client.setCallback(callback);
 
-    connectWiFi();
-    setupOTA();
+  // Configure the GPIO pin as an output
+  pinMode(ledPin23, OUTPUT);
 
-    mqtt.setServer(MQTT_BROKER, MQTT_PORT);
-    mqtt.setCallback(onMqttMessage);
-    mqttConnect();
-
-    setupWebServer();
-
-    // Sensor input, LED outputs — start green (free)
-    pinMode(SENSOR_PIN, INPUT);
-    pinMode(LED_PIN_R, OUTPUT);
-    pinMode(LED_PIN_Y, OUTPUT);
-    pinMode(LED_PIN_G, OUTPUT);
-    setLed("green");
-
-    logger.log("Boot complete");
+  // Sensor input, LED outputs — start green (free)
+  pinMode(SENSOR_PIN, INPUT);
+  pinMode(LED_PIN_R, OUTPUT);
+  pinMode(LED_PIN_Y, OUTPUT);
+  pinMode(LED_PIN_G, OUTPUT);
+  setLed("green");
 }
 
 void loop() {
-    if (WiFi.status() != WL_CONNECTED) {
-        logger.log("WiFi lost, reconnecting");
-        connectWiFi();
-    }
+  ArduinoOTA.handle();
+  server.handleClient();
+  // Your other code goes here
+  float temp_c = (temprature_sens_read() -32) / 1.8;
+  Serial.printf("Temp: %.2f C\n", temp_c);
+  String tmpstr = "temp is : " + String(temp_c);
+  appendLog(tmpstr);
+  delay(2000);
 
-    // Log internal temperature every TEMP_LOG_INTERVAL_MS
-    if (millis() - lastTempLog >= TEMP_LOG_INTERVAL_MS) {
-        lastTempLog = millis();
-        float tempC = temperatureRead();
-        logger.log("CPU temp: " + String(tempC, 1) + " C  (" + String((tempC * 9.0f / 5.0f) + 32.0f, 1) + " F)");
-    }
 
-    // Read sensor every 2 s; only publish on state change
-    if (millis() - lastSensorRead >= 2000) {
-        lastSensorRead = millis();
-        // KY-032: LOW = obstacle detected = occupied
-        String status = (digitalRead(SENSOR_PIN) == LOW) ? "occupied" : "free";
-        if (status != lastStatus) {
-            lastStatus = status;
-            mqtt.publish(MQTT_TOPIC_STATUS, status.c_str(), true);
-            logger.log("Status -> " + status);
-            setLed(status == "occupied" ? "red" : "green");
-        }
-    }
+   if (!client.connected()) {
+    reconnect();
+  }
 
-    ArduinoOTA.handle();
-    handleMqtt();
-    server.handleClient();
+   client.loop();
+
+  unsigned long now = millis();
+  if (now - lastMsg > 5000) {
+    lastMsg = now;
+    value++;
+
+    String message = "Hello from ESP32 to Docker! Message #" + String(value);
+    Serial.print("Publishing message: ");
+    Serial.println(message);
+    appendLog(message);
+    client.publish(publish_topic, message.c_str());
+  }
+
+  // Read sensor every 2 s; only publish on state change
+  if (millis() - lastSensorRead >= 2000) {
+    lastSensorRead = millis();
+    // KY-032: LOW = obstacle detected = occupied
+    String status = (digitalRead(SENSOR_PIN) == LOW) ? "occupied" : "free";
+    if (status != lastStatus) {
+      lastStatus = status;
+      client.publish(publish_topic, status.c_str(), true);
+      appendLog("Status -> " + status);
+      setLed(status == "occupied" ? "red" : "green");
+    }
+  }
+
+   // Supply power to the module to start the auto-flashing sequence
+  digitalWrite(ledPin23, HIGH);
+  delay(5000); // Let it flash through colors for 5 seconds
+  
+  // Cut power to turn the LED off
+  digitalWrite(ledPin23, LOW);  
+  delay(2000); // Keep it off for 2 seconds
+
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (unsigned int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+}
+
+
+void reconnect() {
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    String clientId = "ESP32Client-1000";
+    client.setBufferSize(512);
+    if (client.connect(clientId.c_str())) {
+      Serial.println("connected");
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      delay(5000);
+    }
+  }
 }
