@@ -8,339 +8,280 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      background: #0f1117;
+      background: #0a0d14;
       color: #e2e8f0;
       min-height: 100vh;
-      padding: 32px;
+      padding: 32px 24px;
     }
     h1 {
       text-align: center;
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 600;
       letter-spacing: 0.04em;
       color: #f8fafc;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     .subtitle {
       text-align: center;
-      font-size: 13px;
-      color: #64748b;
-      margin-bottom: 20px;
-    }
-    .branch-legend {
-      display: flex;
-      justify-content: center;
-      gap: 28px;
-      margin-bottom: 28px;
-    }
-    .branch-pill {
-      display: flex;
-      align-items: center;
-      gap: 8px;
       font-size: 12px;
-      color: #94a3b8;
+      color: #475569;
+      margin-bottom: 32px;
     }
-    .pill-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 3px;
-    }
-    .dot-both   { background: #22c55e; }
-    .dot-webapp { background: #3b82f6; }
     svg { display: block; margin: 0 auto; }
-
-    .box-iot    { fill: #1e293b; stroke: #f97316; stroke-width: 1.5; }
-    .box-mqtt   { fill: #1e293b; stroke: #a855f7; stroke-width: 1.5; }
-    .box-next   { fill: #1e293b; stroke: #3b82f6; stroke-width: 1.5; }
-    .box-ai     { fill: #1e293b; stroke: #d946ef; stroke-width: 1.5; }
-    .box-ui     { fill: #1e293b; stroke: #22c55e; stroke-width: 1.5; }
-    .box-user   { fill: #1e293b; stroke: #94a3b8; stroke-width: 1.5; }
-
-    .label-title { font-size: 13px; font-weight: 700; fill: #f1f5f9; }
-    .label-sub   { font-size: 10px; fill: #94a3b8; }
-    .label-tag   { font-size: 9px;  fill: #64748b; }
-    .label-api   { font-size: 10px; font-weight: 600; fill: #e2e8f0; }
-
-    .layer-band  { fill: #ffffff08; }
-    .layer-label { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; fill: #475569; }
-
-    .arrow       { stroke: #475569; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
-    .arrow-iot   { stroke: #f97316; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead-iot); }
-    .arrow-mqtt  { stroke: #a855f7; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead-mqtt); }
-    .arrow-ai    { stroke: #d946ef; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead-ai); }
-    .arrow-sse   { stroke: #22c55e; stroke-width: 1.5; fill: none; stroke-dasharray: 4 3; marker-end: url(#arrowhead-sse); }
-    .arrow-http  { stroke: #3b82f6; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead-http); }
-
-    .arrow-label      { font-size: 9px; fill: #64748b; }
-    .arrow-label-iot  { font-size: 9px; fill: #f97316; }
-    .arrow-label-mqtt { font-size: 9px; fill: #a855f7; }
-    .arrow-label-ai   { font-size: 9px; fill: #d946ef; }
-    .arrow-label-sse  { font-size: 9px; fill: #22c55e; }
-    .arrow-label-http { font-size: 9px; fill: #3b82f6; }
   </style>
 </head>
 <body>
-  <h1>Desk Concierge — Architecture</h1>
-  <p class="subtitle">Anthropic Claude ↔ IoT Integration</p>
+  <h1>Desk Concierge</h1>
+  <p class="subtitle">System Architecture</p>
 
-  <div class="branch-legend">
-    <span class="branch-pill">
-      <span class="pill-dot dot-both"></span>
-      Present in <strong style="color:#22c55e;margin-left:4px">both branches</strong>
-      &nbsp;(ai-activity-logs &amp; webapp)
-    </span>
-    <span class="branch-pill">
-      <span class="pill-dot dot-webapp"></span>
-      <strong style="color:#3b82f6;margin-left:4px">webapp branch only</strong>
-      &nbsp;— not yet merged to main
-    </span>
-  </div>
-
-  <svg width="960" height="860" viewBox="0 0 960 860" xmlns="http://www.w3.org/2000/svg">
+  <svg width="980" height="760" viewBox="0 0 980 760" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-        <polygon points="0 0, 8 3, 0 6" fill="#475569" />
-      </marker>
-      <marker id="arrowhead-iot" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-        <polygon points="0 0, 8 3, 0 6" fill="#f97316" />
-      </marker>
-      <marker id="arrowhead-mqtt" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-        <polygon points="0 0, 8 3, 0 6" fill="#a855f7" />
-      </marker>
-      <marker id="arrowhead-ai" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-        <polygon points="0 0, 8 3, 0 6" fill="#d946ef" />
-      </marker>
-      <marker id="arrowhead-sse" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-        <polygon points="0 0, 8 3, 0 6" fill="#22c55e" />
-      </marker>
-      <marker id="arrowhead-http" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-        <polygon points="0 0, 8 3, 0 6" fill="#3b82f6" />
-      </marker>
-      <filter id="glow-purple"><feGaussianBlur stdDeviation="3" result="blur"/>
-        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      <filter id="glow-pink"><feGaussianBlur stdDeviation="3" result="blur"/>
-        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      <filter id="glow-orange"><feGaussianBlur stdDeviation="4" result="blur"/>
-        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <!-- arrow markers -->
+      <marker id="ah"      markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#475569"/></marker>
+      <marker id="ah-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#3b82f6"/></marker>
+      <marker id="ah-grn"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#22c55e"/></marker>
+      <marker id="ah-pur"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#a855f7"/></marker>
+      <marker id="ah-ora"  markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#f97316"/></marker>
+      <marker id="ah-pink" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#e879f9"/></marker>
+
+      <!-- glows -->
+      <filter id="glow-ora" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="4" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="glow-pur" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="4" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="glow-pink" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="4" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
     </defs>
 
-    <!-- ── Branch scope banners ── -->
-    <!-- webapp-only band (top 2 layers) -->
-    <rect x="10" y="10" width="940" height="530" rx="12" fill="#3b82f608" stroke="#3b82f620" stroke-width="1" stroke-dasharray="6 4" />
-    <text x="930" y="26" text-anchor="end" font-size="10" font-weight="600" fill="#3b82f6" letter-spacing="0.08em">WEBAPP BRANCH ONLY</text>
+    <!-- ══════════════════════════════════════════
+         LAYER BANDS
+    ══════════════════════════════════════════ -->
 
-    <!-- both-branches band (bottom layer) -->
-    <rect x="10" y="555" width="940" height="260" rx="12" fill="#22c55e08" stroke="#22c55e30" stroke-width="1" stroke-dasharray="6 4" />
-    <text x="930" y="571" text-anchor="end" font-size="10" font-weight="600" fill="#22c55e" letter-spacing="0.08em">BOTH BRANCHES</text>
+    <!-- Browser -->
+    <rect x="12" y="12" width="956" height="168" rx="10" fill="#ffffff05" stroke="#1e293b" stroke-width="1"/>
+    <text x="28" y="30" font-size="9" font-weight="700" letter-spacing="0.12em" fill="#334155" text-transform="uppercase">BROWSER</text>
 
-    <!-- ── Layer labels ── -->
-    <text x="26" y="42" class="layer-label" fill="#3b82f640">Browser / Client</text>
-    <text x="26" y="222" class="layer-label" fill="#3b82f640">Next.js 15 — App Router (Server)</text>
-    <text x="26" y="578" class="layer-label" fill="#22c55e60">External / Physical Layer</text>
+    <!-- Next.js backend -->
+    <rect x="12" y="196" width="956" height="258" rx="10" fill="#ffffff04" stroke="#1e293b" stroke-width="1"/>
+    <text x="28" y="214" font-size="9" font-weight="700" letter-spacing="0.12em" fill="#334155">NEXT.JS 15 — SERVER</text>
 
-    <!-- ══════════════════════════════
-         LAYER 1 — BROWSER (webapp only)
-    ══════════════════════════════ -->
+    <!-- External -->
+    <rect x="12" y="470" width="956" height="266" rx="10" fill="#ffffff04" stroke="#1e293b" stroke-width="1"/>
+    <text x="28" y="488" font-size="9" font-weight="700" letter-spacing="0.12em" fill="#334155">EXTERNAL / PHYSICAL</text>
 
-    <!-- User -->
-    <rect x="400" y="52" width="160" height="50" rx="8" class="box-user" />
-    <text x="480" y="73" text-anchor="middle" class="label-title">👤 User</text>
-    <text x="480" y="89" text-anchor="middle" class="label-sub">Web Browser</text>
+    <!-- ══════════════════════════════════════════
+         BROWSER LAYER
+    ══════════════════════════════════════════ -->
 
     <!-- DeskMap -->
-    <rect x="80" y="52" width="240" height="76" rx="8" class="box-ui" />
-    <text x="200" y="72" text-anchor="middle" class="label-title" style="fill:#22c55e">DeskMap</text>
-    <text x="200" y="87" text-anchor="middle" class="label-sub">Desk grid — 8 pods × 5 desks</text>
-    <text x="200" y="102" text-anchor="middle" class="label-tag">Reserve / Release buttons</text>
-    <text x="200" y="116" text-anchor="middle" class="label-tag">LED status indicators (green / yellow / red)</text>
+    <rect x="36" y="38" width="390" height="128" rx="8" fill="#111827" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="231" y="58"  text-anchor="middle" font-size="12" font-weight="700" fill="#22c55e">DeskMap</text>
+    <text x="231" y="74"  text-anchor="middle" font-size="10" fill="#6b7280">4-column pod grid · 8 pods × 5 desks</text>
+    <!-- sub-chips -->
+    <rect x="52"  y="84" width="110" height="32" rx="5" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+    <text x="107" y="97"  text-anchor="middle" font-size="9"  fill="#94a3b8">Feature filter bar</text>
+    <text x="107" y="110" text-anchor="middle" font-size="8"  fill="#4b5563">tag toggle → highlight/dim</text>
+
+    <rect x="174" y="84" width="110" height="32" rx="5" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+    <text x="229" y="97"  text-anchor="middle" font-size="9"  fill="#94a3b8">DeskCard</text>
+    <text x="229" y="110" text-anchor="middle" font-size="8"  fill="#4b5563">LED dot · features · Reserve btn</text>
+
+    <rect x="296" y="84" width="110" height="32" rx="5" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+    <text x="351" y="97"  text-anchor="middle" font-size="9"  fill="#94a3b8">Status header</text>
+    <text x="351" y="110" text-anchor="middle" font-size="8"  fill="#4b5563">free / occupied / reserved counts</text>
+
+    <text x="231" y="154" text-anchor="middle" font-size="8" fill="#4b5563">SSE (EventSource) · POST /api/desks/[id]/reserve|release</text>
 
     <!-- ChatPanel -->
-    <rect x="640" y="52" width="240" height="76" rx="8" class="box-ui" />
-    <text x="760" y="72" text-anchor="middle" class="label-title" style="fill:#22c55e">ChatPanel</text>
-    <text x="760" y="87" text-anchor="middle" class="label-sub">Natural language desk assistant</text>
-    <text x="760" y="102" text-anchor="middle" class="label-tag">Message history  ·  Text input</text>
-    <text x="760" y="116" text-anchor="middle" class="label-tag">Sends POST /api/chat</text>
+    <rect x="554" y="38" width="390" height="128" rx="8" fill="#111827" stroke="#e879f9" stroke-width="1.5"/>
+    <text x="749" y="58"  text-anchor="middle" font-size="12" font-weight="700" fill="#e879f9">ChatPanel</text>
+    <text x="749" y="74"  text-anchor="middle" font-size="10" fill="#6b7280">Natural language desk assistant</text>
 
-    <!-- ══════════════════════════════
-         LAYER 2 — NEXT.JS (webapp only)
-    ══════════════════════════════ -->
+    <rect x="570" y="84" width="170" height="32" rx="5" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+    <text x="655" y="97"  text-anchor="middle" font-size="9"  fill="#94a3b8">Message history</text>
+    <text x="655" y="110" text-anchor="middle" font-size="8"  fill="#4b5563">user + assistant turns</text>
 
-    <!-- state.ts -->
-    <rect x="380" y="238" width="200" height="110" rx="8" class="box-next" />
-    <text x="480" y="258" text-anchor="middle" class="label-title" style="fill:#3b82f6">state.ts</text>
-    <text x="480" y="274" text-anchor="middle" class="label-sub">Singleton state module</text>
-    <text x="480" y="289" text-anchor="middle" class="label-tag">In-memory Map&lt;id, DeskState&gt;</text>
-    <text x="480" y="303" text-anchor="middle" class="label-tag">MQTT client (singleton)</text>
-    <text x="480" y="317" text-anchor="middle" class="label-tag">SSE EventEmitter</text>
-    <text x="480" y="331" text-anchor="middle" class="label-tag">Auto-release timer (2 h)</text>
+    <rect x="752" y="84" width="170" height="32" rx="5" fill="#0f172a" stroke="#1e293b" stroke-width="1"/>
+    <text x="837" y="97"  text-anchor="middle" font-size="9"  fill="#94a3b8">Text input</text>
+    <text x="837" y="110" text-anchor="middle" font-size="8"  fill="#4b5563">POST /api/chat</text>
+
+    <text x="749" y="154" text-anchor="middle" font-size="8" fill="#4b5563">Sends full message history · receives plain text reply</text>
+
+    <!-- ══════════════════════════════════════════
+         NEXT.JS LAYER
+    ══════════════════════════════════════════ -->
+
+    <!-- state.ts — centre anchor -->
+    <rect x="380" y="224" width="220" height="120" rx="8" fill="#111827" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="490" y="246" text-anchor="middle" font-size="12" font-weight="700" fill="#3b82f6">state.ts</text>
+    <text x="490" y="262" text-anchor="middle" font-size="9"  fill="#6b7280">Singleton — survives hot-reload via global</text>
+    <text x="490" y="278" text-anchor="middle" font-size="8"  fill="#4b5563">Map&lt;id, StoredState&gt;  ·  SSE EventEmitter</text>
+    <text x="490" y="292" text-anchor="middle" font-size="8"  fill="#4b5563">MQTT client (singleton)</text>
+    <text x="490" y="306" text-anchor="middle" font-size="8"  fill="#4b5563">Auto-release timer · 2 h</text>
+    <text x="490" y="322" text-anchor="middle" font-size="8"  fill="#4b5563">LED pub on reserve / release / sensor event</text>
+    <text x="490" y="336" text-anchor="middle" font-size="8"  fill="#4b5563">10.6.10.36 : 1883</text>
 
     <!-- /api/sse -->
-    <rect x="60" y="238" width="160" height="80" rx="8" class="box-next" />
-    <text x="140" y="260" text-anchor="middle" class="label-api">GET /api/sse</text>
-    <text x="140" y="275" text-anchor="middle" class="label-sub">Server-Sent Events</text>
-    <text x="140" y="290" text-anchor="middle" class="label-tag">Initial state snapshot</text>
-    <text x="140" y="304" text-anchor="middle" class="label-tag">Real-time push updates</text>
+    <rect x="36" y="224" width="160" height="68" rx="8" fill="#111827" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="116" y="246" text-anchor="middle" font-size="11" font-weight="600" fill="#f1f5f9">GET /api/sse</text>
+    <text x="116" y="262" text-anchor="middle" font-size="9"  fill="#6b7280">Server-Sent Events stream</text>
+    <text x="116" y="277" text-anchor="middle" font-size="8"  fill="#4b5563">init snapshot + live updates</text>
+    <text x="116" y="291" text-anchor="middle" font-size="8"  fill="#4b5563">heartbeat keep-alive</text>
 
     <!-- /api/desks -->
-    <rect x="60" y="338" width="160" height="60" rx="8" class="box-next" />
-    <text x="140" y="358" text-anchor="middle" class="label-api">GET /api/desks</text>
-    <text x="140" y="373" text-anchor="middle" class="label-sub">Desk snapshot (JSON)</text>
-    <rect x="60" y="408" width="160" height="38" rx="8" class="box-next" />
-    <text x="140" y="424" text-anchor="middle" class="label-api">POST …/reserve|release</text>
-    <text x="140" y="439" text-anchor="middle" class="label-tag">State change + LED cmd</text>
+    <rect x="36" y="306" width="160" height="68" rx="8" fill="#111827" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="116" y="328" text-anchor="middle" font-size="11" font-weight="600" fill="#f1f5f9">GET /api/desks</text>
+    <text x="116" y="344" text-anchor="middle" font-size="8"  fill="#4b5563">JSON snapshot of all desks</text>
+    <text x="116" y="360" text-anchor="middle" font-size="11" font-weight="600" fill="#f1f5f9">POST …/reserve | release</text>
+    <text x="116" y="375" text-anchor="middle" font-size="8"  fill="#4b5563">mutates state → LED cmd → SSE</text>
 
     <!-- /api/chat -->
-    <rect x="640" y="238" width="200" height="110" rx="8" class="box-next" />
-    <text x="740" y="258" text-anchor="middle" class="label-api">POST /api/chat</text>
-    <text x="740" y="274" text-anchor="middle" class="label-sub">Claude Haiku agent loop</text>
-    <text x="740" y="289" text-anchor="middle" class="label-tag">Dynamic system prompt</text>
-    <text x="740" y="304" text-anchor="middle" class="label-tag">Tools: reserve_desk, release_desk</text>
-    <text x="740" y="319" text-anchor="middle" class="label-tag">Iterates until stop_reason=end_turn</text>
-    <text x="740" y="334" text-anchor="middle" class="label-tag">@anthropic-ai/sdk  ·  max_tokens 1024</text>
+    <rect x="612" y="224" width="220" height="120" rx="8" fill="#111827" stroke="#e879f9" stroke-width="1.5"/>
+    <text x="722" y="246" text-anchor="middle" font-size="11" font-weight="600" fill="#f1f5f9">POST /api/chat</text>
+    <text x="722" y="262" text-anchor="middle" font-size="9"  fill="#6b7280">Azure OpenAI agentic loop</text>
+    <text x="722" y="278" text-anchor="middle" font-size="8"  fill="#4b5563">Dynamic system prompt (all desk states)</text>
+    <text x="722" y="293" text-anchor="middle" font-size="8"  fill="#4b5563">Tools: reserve_desk · release_desk</text>
+    <text x="722" y="308" text-anchor="middle" font-size="8"  fill="#4b5563">Loop until finish_reason ≠ tool_calls</text>
+    <text x="722" y="323" text-anchor="middle" font-size="8"  fill="#4b5563">model: gpt-5.4-nano · max_tokens 1024</text>
+    <text x="722" y="338" text-anchor="middle" font-size="8"  fill="#4b5563">openai SDK (AzureOpenAI client)</text>
 
     <!-- simulator.ts -->
-    <rect x="64" y="466" width="280" height="56" rx="8" class="box-next" />
-    <text x="204" y="487" text-anchor="middle" class="label-api" style="fill:#60a5fa">simulator.ts</text>
-    <text x="204" y="502" text-anchor="middle" class="label-sub">Occupancy simulation (desks 2–40)</text>
-    <text x="204" y="516" text-anchor="middle" class="label-tag">Pub random MQTT events ~20 s  ·  via instrumentation.ts</text>
+    <rect x="612" y="360" width="220" height="56" rx="8" fill="#111827" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="722" y="382" text-anchor="middle" font-size="11" font-weight="600" fill="#60a5fa">simulator.ts</text>
+    <text x="722" y="398" text-anchor="middle" font-size="8"  fill="#4b5563">Simulates desks 2–40 · random state ~20 s</text>
+    <text x="722" y="412" text-anchor="middle" font-size="8"  fill="#4b5563">Publishes to MQTT · started by instrumentation.ts</text>
 
-    <!-- ══════════════════════════════
-         LAYER 3 — EXTERNAL (both branches)
-    ══════════════════════════════ -->
+    <!-- ══════════════════════════════════════════
+         EXTERNAL LAYER
+    ══════════════════════════════════════════ -->
 
     <!-- MQTT Broker -->
-    <rect x="330" y="592" width="300" height="90" rx="8" class="box-mqtt" filter="url(#glow-purple)" />
-    <!-- "both" badge -->
-    <rect x="550" y="585" width="68" height="16" rx="4" fill="#22c55e20" stroke="#22c55e50" stroke-width="1" />
-    <text x="584" y="597" text-anchor="middle" font-size="9" font-weight="600" fill="#22c55e">both branches</text>
-    <text x="480" y="616" text-anchor="middle" class="label-title" style="fill:#a855f7">MQTT Broker</text>
-    <text x="480" y="634" text-anchor="middle" class="label-sub">10.250.251.10 : 1883</text>
-    <text x="480" y="650" text-anchor="middle" class="label-tag">desk/+/status  →  occupancy events</text>
-    <text x="480" y="666" text-anchor="middle" class="label-tag">desk/+/led  →  LED colour commands</text>
+    <rect x="350" y="496" width="280" height="86" rx="8" fill="#111827" stroke="#a855f7" stroke-width="1.5" filter="url(#glow-pur)"/>
+    <text x="490" y="520" text-anchor="middle" font-size="13" font-weight="700" fill="#a855f7">MQTT Broker</text>
+    <text x="490" y="538" text-anchor="middle" font-size="10" fill="#6b7280">10.6.10.36 : 1883</text>
+    <text x="490" y="554" text-anchor="middle" font-size="8"  fill="#4b5563">desk/+/status  →  occupancy events (retained)</text>
+    <text x="490" y="568" text-anchor="middle" font-size="8"  fill="#4b5563">desk/+/led  →  LED colour commands</text>
 
-    <!-- Anthropic API -->
-    <rect x="680" y="592" width="240" height="90" rx="8" class="box-ai" filter="url(#glow-pink)" />
-    <!-- webapp-only badge -->
-    <rect x="832" y="585" width="76" height="16" rx="4" fill="#3b82f620" stroke="#3b82f650" stroke-width="1" />
-    <text x="870" y="597" text-anchor="middle" font-size="9" font-weight="600" fill="#3b82f6">webapp only</text>
-    <text x="800" y="616" text-anchor="middle" class="label-title" style="fill:#d946ef">Anthropic API</text>
-    <text x="800" y="634" text-anchor="middle" class="label-sub">claude-haiku-4-5-20251001</text>
-    <text x="800" y="650" text-anchor="middle" class="label-tag">Tool use (function calling)</text>
-    <text x="800" y="666" text-anchor="middle" class="label-tag">Conversational desk-booking agent</text>
+    <!-- Azure OpenAI -->
+    <rect x="680" y="496" width="268" height="86" rx="8" fill="#111827" stroke="#e879f9" stroke-width="1.5" filter="url(#glow-pink)"/>
+    <text x="814" y="520" text-anchor="middle" font-size="13" font-weight="700" fill="#e879f9">Azure OpenAI</text>
+    <text x="814" y="538" text-anchor="middle" font-size="9"  fill="#6b7280">foundry-hackaton-27-05.cognitiveservices.azure.com</text>
+    <text x="814" y="554" text-anchor="middle" font-size="9"  fill="#4b5563">Model: gpt-5.4-nano</text>
+    <text x="814" y="568" text-anchor="middle" font-size="8"  fill="#4b5563">Tool use (function calling)  ·  HTTPS</text>
 
     <!-- ESP32 Device -->
-    <rect x="40" y="592" width="260" height="150" rx="8" class="box-iot" filter="url(#glow-orange)" />
-    <!-- "both" badge -->
-    <rect x="214" y="585" width="68" height="16" rx="4" fill="#22c55e20" stroke="#22c55e50" stroke-width="1" />
-    <text x="248" y="597" text-anchor="middle" font-size="9" font-weight="600" fill="#22c55e">both branches</text>
-    <text x="170" y="615" text-anchor="middle" class="label-title" style="fill:#f97316">ESP32 Device — Desk 1</text>
-    <text x="170" y="631" text-anchor="middle" class="label-sub">Physical sensor node (C++ / PlatformIO)</text>
-    <rect x="56" y="643" width="228" height="24" rx="4" fill="#0f172a" />
-    <text x="170" y="660" text-anchor="middle" class="label-tag">KY-032 IR sensor (pin 14)  →  occupied / free</text>
-    <rect x="56" y="673" width="228" height="24" rx="4" fill="#0f172a" />
-    <text x="170" y="690" text-anchor="middle" class="label-tag">RGB LED (pins 25/26/27)  ←  colour commands</text>
-    <rect x="56" y="703" width="228" height="30" rx="4" fill="#0f172a" />
-    <text x="170" y="716" text-anchor="middle" class="label-tag">OTA firmware updates</text>
-    <text x="170" y="728" text-anchor="middle" class="label-tag">HTTP status page + log viewer</text>
+    <rect x="36" y="496" width="288" height="200" rx="8" fill="#111827" stroke="#f97316" stroke-width="1.5" filter="url(#glow-ora)"/>
+    <text x="180" y="520" text-anchor="middle" font-size="13" font-weight="700" fill="#f97316">ESP32 — Desk 1 (A1)</text>
+    <text x="180" y="537" text-anchor="middle" font-size="9"  fill="#6b7280">Firmware: C++ / PlatformIO · Arduino framework</text>
 
-    <!-- ══════════════════════════════
+    <rect x="52" y="548" width="256" height="24" rx="4" fill="#0a0d14"/>
+    <text x="180" y="565" text-anchor="middle" font-size="8" fill="#94a3b8">WiFi: WPA2-Enterprise (EAP)  ·  SSID: DB-CTS-WORK</text>
+
+    <rect x="52" y="578" width="256" height="24" rx="4" fill="#0a0d14"/>
+    <text x="180" y="592" text-anchor="middle" font-size="8" fill="#94a3b8">KY-032 IR sensor (pin 14) → LOW = occupied</text>
+    <text x="180" y="604" text-anchor="middle" font-size="8" fill="#4b5563">polls every 2 s · publish on state change</text>
+
+    <rect x="52" y="608" width="256" height="24" rx="4" fill="#0a0d14"/>
+    <text x="180" y="622" text-anchor="middle" font-size="8" fill="#94a3b8">RGB LED (pins 25 / 26 / 27)</text>
+    <text x="180" y="634" text-anchor="middle" font-size="8" fill="#4b5563">green=free · yellow=reserved · red=occupied</text>
+
+    <rect x="52" y="638" width="120" height="20" rx="4" fill="#0a0d14"/>
+    <text x="112" y="652" text-anchor="middle" font-size="8" fill="#4b5563">OTA (port 3232)</text>
+
+    <rect x="180" y="638" width="128" height="20" rx="4" fill="#0a0d14"/>
+    <text x="244" y="652" text-anchor="middle" font-size="8" fill="#4b5563">HTTP log server (port 80)</text>
+
+    <rect x="52" y="664" width="256" height="20" rx="4" fill="#0a0d14"/>
+    <text x="180" y="677" text-anchor="middle" font-size="8" fill="#4b5563">CPU temp logging  ·  in-memory log buffer (4 KB)</text>
+
+    <!-- ══════════════════════════════════════════
          ARROWS
-    ══════════════════════════════ -->
+    ══════════════════════════════════════════ -->
 
-    <!-- User → ChatPanel -->
-    <line x1="480" y1="80" x2="640" y2="88" class="arrow" />
-    <text x="554" y="75" text-anchor="middle" class="arrow-label">types message</text>
+    <!-- DeskMap ←→ /api/sse  (SSE) -->
+    <path d="M 180 166 L 180 190 L 116 190 L 116 224" stroke="#22c55e" stroke-width="1.5" fill="none" stroke-dasharray="5 3" marker-end="url(#ah-grn)"/>
+    <text x="148" y="186" text-anchor="middle" font-size="8" fill="#22c55e">SSE</text>
 
-    <!-- User → DeskMap -->
-    <line x1="400" y1="72" x2="320" y2="88" class="arrow" />
-    <text x="352" y="72" text-anchor="middle" class="arrow-label">clicks reserve</text>
-
-    <!-- DeskMap → /api/sse (SSE) -->
-    <path d="M 200 128 L 200 160 L 140 160 L 140 238" class="arrow-sse" />
-    <text x="156" y="172" class="arrow-label-sse">SSE stream</text>
-
-    <!-- DeskMap → /api/desks/reserve|release -->
-    <path d="M 200 128 L 200 184 L 100 184 L 100 408" class="arrow-http" />
-    <text x="56" y="200" class="arrow-label-http">POST reserve/release</text>
+    <!-- DeskMap → /api/desks (reserve/release) -->
+    <path d="M 116 166 L 116 180 L 80 180 L 80 306" stroke="#3b82f6" stroke-width="1.5" fill="none" marker-end="url(#ah-blue)"/>
+    <text x="56" y="240" font-size="8" fill="#3b82f6">POST</text>
 
     <!-- ChatPanel → /api/chat -->
-    <path d="M 760 128 L 760 184 L 740 184 L 740 238" class="arrow-http" />
-    <text x="768" y="174" class="arrow-label-http">POST /api/chat</text>
+    <path d="M 722 166 L 722 190 L 722 224" stroke="#e879f9" stroke-width="1.5" fill="none" marker-end="url(#ah-pink)"/>
+    <text x="728" y="200" font-size="8" fill="#e879f9">POST</text>
 
-    <!-- /api/sse → state.ts -->
-    <line x1="220" y1="278" x2="380" y2="278" class="arrow-http" />
-    <text x="300" y="270" text-anchor="middle" class="arrow-label-http">reads EventEmitter</text>
+    <!-- /api/sse ← state.ts -->
+    <line x1="380" y1="268" x2="196" y2="268" stroke="#3b82f6" stroke-width="1.5" fill="none" marker-end="url(#ah-blue)"/>
+    <text x="288" y="261" text-anchor="middle" font-size="8" fill="#3b82f6">reads EventEmitter</text>
 
-    <!-- /api/desks → state.ts -->
-    <path d="M 220 368 L 290 368 L 290 300 L 380 300" class="arrow-http" />
-    <text x="310" y="325" class="arrow-label-http">reads / writes</text>
+    <!-- /api/desks ↔ state.ts -->
+    <path d="M 196 348 L 290 348 L 290 310 L 380 310" stroke="#3b82f6" stroke-width="1.5" fill="none" marker-end="url(#ah-blue)"/>
+    <text x="290" y="332" font-size="8" fill="#3b82f6" text-anchor="middle">reads / writes</text>
 
-    <!-- /api/chat → state.ts (tool execution) -->
-    <line x1="640" y1="305" x2="580" y2="305" class="arrow-ai" />
-    <text x="606" y="297" class="arrow-label-ai">tool calls</text>
+    <!-- /api/chat → state.ts (tool calls) -->
+    <line x1="612" y1="295" x2="600" y2="295" stroke="#e879f9" stroke-width="1.5" fill="none"/>
+    <line x1="600" y1="295" x2="600" y2="295" stroke="#e879f9" stroke-width="1.5" fill="none" marker-end="url(#ah-pink)"/>
+    <path d="M 612 295 L 600 295 L 600 295" stroke="#e879f9" stroke-width="1.5" fill="none" marker-end="url(#ah-pink)"/>
+    <line x1="612" y1="290" x2="600" y2="290" stroke="#e879f9" stroke-width="1.5" fill="none"/>
+    <path d="M 612 290 L 594 290 L 594 284 L 600 284" stroke="none"/>
+    <!-- simpler: just a line -->
+    <line x1="612" y1="284" x2="600" y2="284" stroke="#e879f9" stroke-width="1.5" fill="none" marker-end="url(#ah-pink)"/>
+    <text x="606" y="276" text-anchor="middle" font-size="8" fill="#e879f9">tool calls</text>
 
-    <!-- /api/chat → Anthropic API -->
-    <path d="M 740 348 L 740 545 L 800 545 L 800 592" class="arrow-ai" />
-    <text x="816" y="545" class="arrow-label-ai">HTTPS</text>
-
-    <!-- state.ts → MQTT (publish LED) -->
-    <path d="M 480 348 L 480 592" class="arrow-mqtt" />
-    <text x="490" y="485" class="arrow-label-mqtt">pub desk/+/led</text>
-
-    <!-- MQTT → state.ts (subscribe) -->
-    <path d="M 460 592 L 460 348" class="arrow-mqtt" />
-    <text x="404" y="492" class="arrow-label-mqtt">sub desk/+/status</text>
+    <!-- /api/chat → Azure OpenAI -->
+    <path d="M 832 344 L 832 460 L 814 460 L 814 496" stroke="#e879f9" stroke-width="1.5" fill="none" marker-end="url(#ah-pink)"/>
+    <text x="840" y="430" font-size="8" fill="#e879f9">HTTPS</text>
 
     <!-- simulator → MQTT -->
-    <path d="M 280 494 L 380 494 L 380 592" class="arrow-mqtt" />
-    <text x="348" y="484" class="arrow-label-mqtt">pub simulated</text>
+    <path d="M 722 416 L 722 450 L 560 450 L 560 496" stroke="#a855f7" stroke-width="1.5" fill="none" marker-end="url(#ah-pur)"/>
+    <text x="640" y="444" text-anchor="middle" font-size="8" fill="#a855f7">pub simulated states</text>
 
-    <!-- ESP32 → MQTT (publish) -->
-    <line x1="300" y1="634" x2="330" y2="634" class="arrow-iot" />
-    <text x="314" y="626" text-anchor="middle" class="arrow-label-iot">pub status</text>
+    <!-- state.ts → MQTT (pub LED) -->
+    <path d="M 490 344 L 490 460 L 520 460 L 520 496" stroke="#a855f7" stroke-width="1.5" fill="none" marker-end="url(#ah-pur)"/>
+    <text x="500" y="408" font-size="8" fill="#a855f7">pub desk/+/led</text>
 
-    <!-- MQTT → ESP32 (LED) -->
-    <line x1="330" y1="654" x2="300" y2="654" class="arrow-mqtt" />
-    <text x="314" y="672" text-anchor="middle" class="arrow-label-mqtt">sub LED</text>
+    <!-- MQTT → state.ts (sub status) -->
+    <path d="M 460 496 L 460 460 L 470 460 L 470 344" stroke="#a855f7" stroke-width="1.5" fill="none" stroke-dasharray="5 3" marker-end="url(#ah-pur)"/>
+    <text x="418" y="422" font-size="8" fill="#a855f7">sub desk/+/status</text>
 
-    <!-- ══════════════════════════════
-         BRANCH STATUS TABLE
-    ══════════════════════════════ -->
-    <rect x="30" y="768" width="900" height="78" rx="8" fill="#0f172a" stroke="#1e293b" stroke-width="1" />
-    <text x="480" y="786" text-anchor="middle" font-size="11" font-weight="700" fill="#f1f5f9">Branch Status Summary</text>
+    <!-- ESP32 → MQTT (pub status) -->
+    <line x1="324" y1="574" x2="350" y2="574" stroke="#f97316" stroke-width="1.5" fill="none" marker-end="url(#ah-ora)"/>
+    <text x="336" y="567" text-anchor="middle" font-size="8" fill="#f97316">pub status</text>
 
-    <!-- headers -->
-    <text x="120" y="803" text-anchor="middle" font-size="10" font-weight="600" fill="#64748b">Component</text>
-    <text x="390" y="803" text-anchor="middle" font-size="10" font-weight="600" fill="#22c55e">ai-activity-logs (main)</text>
-    <text x="660" y="803" text-anchor="middle" font-size="10" font-weight="600" fill="#3b82f6">webapp</text>
-    <line x1="30" y1="807" x2="930" y2="807" stroke="#1e293b" stroke-width="1" />
+    <!-- MQTT → ESP32 (sub LED) -->
+    <line x1="350" y1="594" x2="324" y2="594" stroke="#a855f7" stroke-width="1.5" fill="none" marker-end="url(#ah-pur)"/>
+    <text x="336" y="612" text-anchor="middle" font-size="8" fill="#a855f7">sub LED cmd</text>
 
-    <!-- row 1 -->
-    <text x="120" y="820" text-anchor="middle" font-size="9" fill="#94a3b8">ESP32 firmware + MQTT config</text>
-    <text x="390" y="820" text-anchor="middle" font-size="10" fill="#22c55e">✓ present</text>
-    <text x="660" y="820" text-anchor="middle" font-size="10" fill="#22c55e">✓ present</text>
+    <!-- ══════════════════════════════════════════
+         LEGEND
+    ══════════════════════════════════════════ -->
+    <rect x="350" y="596" width="280" height="118" rx="8" fill="#0a0d14" stroke="#1e293b" stroke-width="1"/>
+    <text x="490" y="614" text-anchor="middle" font-size="10" font-weight="700" fill="#f1f5f9">Legend</text>
 
-    <!-- row 2 -->
-    <text x="120" y="835" text-anchor="middle" font-size="9" fill="#94a3b8">Next.js webapp + React UI</text>
-    <text x="390" y="835" text-anchor="middle" font-size="10" fill="#ef4444">✗ missing</text>
-    <text x="660" y="835" text-anchor="middle" font-size="10" fill="#22c55e">✓ present</text>
+    <line x1="368" y1="628" x2="400" y2="628" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#ah-grn)"/>
+    <text x="408" y="632" font-size="9" fill="#22c55e">SSE  (real-time push)</text>
 
-    <!-- row 3 -->
-    <text x="120" y="850" text-anchor="middle" font-size="9" fill="#94a3b8">Anthropic Claude Haiku agent</text>
-    <text x="390" y="850" text-anchor="middle" font-size="10" fill="#ef4444">✗ missing</text>
-    <text x="660" y="850" text-anchor="middle" font-size="10" fill="#22c55e">✓ present</text>
+    <line x1="368" y1="646" x2="400" y2="646" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#ah-blue)"/>
+    <text x="408" y="650" font-size="9" fill="#3b82f6">HTTP / REST</text>
 
-    <!-- Legend -->
-    <rect x="700" y="768" width="220" height="80" rx="6" fill="#0f1117" stroke="#1e293b" stroke-width="1" />
-    <text x="810" y="783" text-anchor="middle" font-size="10" font-weight="600" fill="#f1f5f9">Legend</text>
-    <line x1="716" y1="794" x2="746" y2="794" class="arrow-sse" />
-    <text x="752" y="798" font-size="9" fill="#22c55e">SSE (real-time push)</text>
-    <line x1="716" y1="808" x2="746" y2="808" class="arrow-http" />
-    <text x="752" y="812" font-size="9" fill="#3b82f6">HTTP / REST</text>
-    <line x1="716" y1="822" x2="746" y2="822" class="arrow-mqtt" />
-    <text x="752" y="826" font-size="9" fill="#a855f7">MQTT pub/sub</text>
-    <line x1="716" y1="836" x2="746" y2="836" class="arrow-ai" />
-    <text x="752" y="840" font-size="9" fill="#d946ef">Anthropic API</text>
+    <line x1="368" y1="664" x2="400" y2="664" stroke="#a855f7" stroke-width="1.5" marker-end="url(#ah-pur)"/>
+    <text x="408" y="668" font-size="9" fill="#a855f7">MQTT  pub/sub</text>
+
+    <line x1="368" y1="682" x2="400" y2="682" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#ah-pur)"/>
+    <text x="408" y="686" font-size="9" fill="#a855f7">MQTT  subscribe</text>
+
+    <line x1="368" y1="700" x2="400" y2="700" stroke="#e879f9" stroke-width="1.5" marker-end="url(#ah-pink)"/>
+    <text x="408" y="704" font-size="9" fill="#e879f9">Azure OpenAI API</text>
+
+    <line x1="368" y1="718" x2="400" y2="718" stroke="#f97316" stroke-width="1.5" marker-end="url(#ah-ora)"/>
+    <text x="408" y="722" font-size="9" fill="#f97316">IoT sensor event</text>
+
   </svg>
 </body>
 </html>
