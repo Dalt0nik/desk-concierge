@@ -8,6 +8,12 @@
 #include <PubSubClient.h>
 #include "config.h"
 
+// ── Sensor & LED pins ─────────────────────────────────────────────────────────
+#define SENSOR_PIN  14   // KY-032 OUT → LOW when obstacle (occupied)
+#define LED_PIN_R   25
+#define LED_PIN_Y   26
+#define LED_PIN_G   27
+
 // ── Globals ───────────────────────────────────────────────────────────────────
 WebServer    server(WEB_SERVER_PORT);
 WiFiClient   wifiClient;
@@ -15,6 +21,15 @@ PubSubClient mqtt(wifiClient);
 
 unsigned long lastMqttReconnect = 0;
 unsigned long lastTempLog        = 0;
+unsigned long lastSensorRead     = 0;
+String        lastStatus         = "";
+
+void setLed(const String& color) {
+    digitalWrite(LED_PIN_R, color == "red"    ? HIGH : LOW);
+    digitalWrite(LED_PIN_Y, color == "yellow" ? HIGH : LOW);
+    digitalWrite(LED_PIN_G, color == "green"  ? HIGH : LOW);
+    logger.log("LED -> " + color);
+}
 
 // ── Logger ────────────────────────────────────────────────────────────────────
 // Circular buffer — oldest entry is silently overwritten when full.
@@ -160,7 +175,11 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
     Serial.printf("[MQTT] <- [%s] %s\n", topic, msg.c_str());
     logger.log("MQTT <- [" + String(topic) + "] " + msg);
 
-    // ── Add your command handling here ───────────────────────────────────────
+    // LED color command from server
+    if (msg == "red" || msg == "yellow" || msg == "green") {
+        setLed(msg);
+        return;
+    }
     if (msg == "ping") {
         mqtt.publish(MQTT_TOPIC_STATUS, "pong");
     }
@@ -277,6 +296,14 @@ void setup() {
     mqttConnect();
 
     setupWebServer();
+
+    // Sensor input, LED outputs — start green (free)
+    pinMode(SENSOR_PIN, INPUT);
+    pinMode(LED_PIN_R, OUTPUT);
+    pinMode(LED_PIN_Y, OUTPUT);
+    pinMode(LED_PIN_G, OUTPUT);
+    setLed("green");
+
     logger.log("Boot complete");
 }
 
@@ -291,6 +318,19 @@ void loop() {
         lastTempLog = millis();
         float tempC = temperatureRead();
         logger.log("CPU temp: " + String(tempC, 1) + " C  (" + String((tempC * 9.0f / 5.0f) + 32.0f, 1) + " F)");
+    }
+
+    // Read sensor every 2 s; only publish on state change
+    if (millis() - lastSensorRead >= 2000) {
+        lastSensorRead = millis();
+        // KY-032: LOW = obstacle detected = occupied
+        String status = (digitalRead(SENSOR_PIN) == LOW) ? "occupied" : "free";
+        if (status != lastStatus) {
+            lastStatus = status;
+            mqtt.publish(MQTT_TOPIC_STATUS, status.c_str(), true);
+            logger.log("Status -> " + status);
+            setLed(status == "occupied" ? "red" : "green");
+        }
     }
 
     ArduinoOTA.handle();

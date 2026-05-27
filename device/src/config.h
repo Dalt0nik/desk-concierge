@@ -15,8 +15,8 @@
 #define MQTT_PASSWORD    ""
 #define MQTT_CLIENT_ID   "esp32-device1"
 
-#define MQTT_TOPIC_STATUS    "esp32/status"
-#define MQTT_TOPIC_SUB       "esp32/cmd"
+#define MQTT_TOPIC_STATUS    "desk/1/status"
+#define MQTT_TOPIC_SUB       "desk/1/led"
 #define MQTT_RECONNECT_MS    5000
 
 // ── OTA ──────────────────────────────────────────────────────────────────────
