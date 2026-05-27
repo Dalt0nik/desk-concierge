@@ -166,6 +166,7 @@ void loop() {
     String status = (digitalRead(SENSOR_PIN) == LOW) ? "occupied" : "free";
     if (status != lastStatus) {
       lastStatus = status;
+      setLed(status == "occupied" ? "red" : "green");
       client.publish(status_topic, status.c_str(), true);
       appendLog("Status -> " + status);
     }
