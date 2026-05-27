@@ -8,6 +8,8 @@
 #include <PubSubClient.h>
 #include "config.h"
 
+extern "C" uint8_t temprature_sens_read();
+
 // ── Sensor & LED pins ─────────────────────────────────────────────────────────
 #define SENSOR_PIN  14   // KY-032 OUT → LOW when obstacle (occupied)
 #define LED_PIN_R   25
@@ -102,18 +104,12 @@ void connectWiFi() {
     WiFi.disconnect(true);
     WiFi.mode(WIFI_STA);
     WiFi.setHostname(WIFI_HOSTNAME);
-/*
     esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)WPA2_IDENTITY, strlen(WPA2_IDENTITY));
     esp_wifi_sta_wpa2_ent_set_username((uint8_t *)WPA2_USERNAME, strlen(WPA2_USERNAME));
     esp_wifi_sta_wpa2_ent_set_password((uint8_t *)WPA2_PASSWORD, strlen(WPA2_PASSWORD));
     esp_wifi_sta_wpa2_ent_enable();
 
     WiFi.begin(WIFI_SSID);
-*/
-
-    // ── WPA2 Personal / PSK alternative (comment out the block above and
-    //    uncomment this line if your network uses a plain password instead) ───
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
     unsigned long start = millis();
     while (WiFi.status() != WL_CONNECTED) {
@@ -130,6 +126,7 @@ void connectWiFi() {
 
 // ── ArduinoOTA ────────────────────────────────────────────────────────────────
 void setupOTA() {
+    ArduinoOTA.setPort(3232);
     ArduinoOTA.setHostname(WIFI_HOSTNAME);
    // ArduinoOTA.setPassword(OTA_PASSWORD);
 
@@ -292,6 +289,7 @@ void setup() {
     setupOTA();
 
     mqtt.setServer(MQTT_BROKER, MQTT_PORT);
+    mqtt.setBufferSize(512);
     mqtt.setCallback(onMqttMessage);
     mqttConnect();
 
@@ -316,7 +314,7 @@ void loop() {
     // Log internal temperature every TEMP_LOG_INTERVAL_MS
     if (millis() - lastTempLog >= TEMP_LOG_INTERVAL_MS) {
         lastTempLog = millis();
-        float tempC = temperatureRead();
+        float tempC = (temprature_sens_read() - 32) / 1.8f;
         logger.log("CPU temp: " + String(tempC, 1) + " C  (" + String((tempC * 9.0f / 5.0f) + 32.0f, 1) + " F)");
     }
 
