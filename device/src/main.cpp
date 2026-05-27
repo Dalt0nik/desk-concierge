@@ -31,7 +31,10 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 
 unsigned long lastSensorRead = 0;
-String lastStatus = "";
+String lastPublished = "";
+unsigned long lastOccupiedAt = 0;
+
+const unsigned long FREE_DELAY_MS = 2UL * 60UL * 1000UL; // 2 minutes
 
 String logs = "";
 
@@ -159,15 +162,26 @@ void loop() {
 
   client.loop();
 
-  // Read sensor every 2 s; only publish on state change
+  // Read sensor every 2 s; occupied publishes immediately, free only after 2 min with no occupied reading
   if (millis() - lastSensorRead >= 2000) {
     lastSensorRead = millis();
     // KY-032: LOW = obstacle detected = occupied
-    String status = (digitalRead(SENSOR_PIN) == LOW) ? "occupied" : "free";
-    if (status != lastStatus) {
-      lastStatus = status;
-      client.publish(status_topic, status.c_str(), true);
-      appendLog("Status -> " + status);
+    bool occupied = (digitalRead(SENSOR_PIN) == LOW);
+
+    if (occupied) {
+      lastOccupiedAt = millis();
+      if (lastPublished != "occupied") {
+        lastPublished = "occupied";
+        client.publish(status_topic, "occupied", true);
+        appendLog("Status -> occupied");
+      }
+    } else {
+      unsigned long sinceOccupied = lastOccupiedAt == 0 ? FREE_DELAY_MS : millis() - lastOccupiedAt;
+      if (lastPublished != "free" && sinceOccupied >= FREE_DELAY_MS) {
+        lastPublished = "free";
+        client.publish(status_topic, "free", true);
+        appendLog("Status -> free");
+      }
     }
   }
 
@@ -190,6 +204,9 @@ void reconnect() {
     if (client.connect(clientId.c_str())) {
       Serial.println("connected");
       client.subscribe(led_topic);
+      if (lastPublished.length() > 0) {
+        client.publish(status_topic, lastPublished.c_str(), true);
+      }
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
