@@ -1,6 +1,6 @@
 'use client';
 
-import { DESKS, PODS, DeskConfig } from '@/config/desks';
+import { DESKS, PODS, DeskConfig, Feature } from '@/config/desks';
 import type { DeskState, DeskStatus } from '@/types';
 
 const STATUS_COLOR: Record<DeskStatus, string> = {
@@ -19,9 +19,11 @@ interface Props {
   states: Record<string, DeskState>;
   onReserve: (id: string) => void;
   onRelease: (id: string) => void;
+  highlightTags?: Feature[];
 }
 
-export function DeskMap({ states, onReserve, onRelease }: Props) {
+export function DeskMap({ states, onReserve, onRelease, highlightTags = [] }: Props) {
+  const filtering = highlightTags.length > 0;
   return (
     <div style={{
       display: 'grid',
@@ -46,15 +48,22 @@ export function DeskMap({ states, onReserve, onRelease }: Props) {
               {pod.name} · {desks.length}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-              {desks.map(desk => (
-                <DeskCard
-                  key={desk.id}
-                  desk={desk}
-                  status={states[desk.id]?.status ?? 'free'}
-                  onReserve={() => onReserve(desk.id)}
-                  onRelease={() => onRelease(desk.id)}
-                />
-              ))}
+              {desks.map(desk => {
+                const matches =
+                  filtering &&
+                  highlightTags.every(t => desk.features.includes(t));
+                return (
+                  <DeskCard
+                    key={desk.id}
+                    desk={desk}
+                    status={states[desk.id]?.status ?? 'free'}
+                    onReserve={() => onReserve(desk.id)}
+                    onRelease={() => onRelease(desk.id)}
+                    highlighted={matches}
+                    dimmed={filtering && !matches}
+                  />
+                );
+              })}
             </div>
           </div>
         );
@@ -63,11 +72,13 @@ export function DeskMap({ states, onReserve, onRelease }: Props) {
   );
 }
 
-function DeskCard({ desk, status, onReserve, onRelease }: {
+function DeskCard({ desk, status, onReserve, onRelease, highlighted, dimmed }: {
   desk: DeskConfig;
   status: DeskStatus;
   onReserve: () => void;
   onRelease: () => void;
+  highlighted: boolean;
+  dimmed: boolean;
 }) {
   const color = STATUS_COLOR[status];
 
@@ -75,10 +86,13 @@ function DeskCard({ desk, status, onReserve, onRelease }: {
     <div style={{
       width: 'calc(50% - 0.2rem)',
       minHeight: 82,
-      border: `1.5px solid ${color}`,
+      border: `1.5px solid ${highlighted ? '#eab308' : color}`,
       borderRadius: '5px',
       padding: '0.35rem 0.4rem',
-      background: '#161616',
+      background: highlighted ? 'rgba(234,179,8,0.12)' : '#161616',
+      boxShadow: highlighted ? '0 0 0 1px #eab308, 0 0 10px rgba(234,179,8,0.45)' : 'none',
+      opacity: dimmed ? 0.3 : 1,
+      transition: 'opacity 120ms, box-shadow 120ms, background 120ms',
       display: 'flex',
       flexDirection: 'column',
     }}>
