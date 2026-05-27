@@ -15,6 +15,12 @@ const char* publish_topic = "esp32/hackathon/data";
 // pins
 const int ledPin23 = 23;
 
+// Sensor & LED pins
+#define SENSOR_PIN  14   // KY-032 OUT → LOW when obstacle (occupied)
+#define LED_PIN_R   25
+#define LED_PIN_Y   26
+#define LED_PIN_G   27
+
 // for wpa
 #define EAP_IDENTITY "hakatonas.2026@devbridge.com"
 #define EAP_USERNAME "hakatonas.2026@devbridge.com"
@@ -28,6 +34,8 @@ PubSubClient client(espClient);
 
 unsigned long lastMsg = 0;
 int value = 0;
+unsigned long lastSensorRead = 0;
+String lastStatus = "";
 
 String logs = "";
 
@@ -36,6 +44,13 @@ void appendLog(String message) {
   if (logs.length() > 4000) {
     logs = logs.substring(logs.length() - 4000);
   }
+}
+
+void setLed(const String& color) {
+  digitalWrite(LED_PIN_R, color == "red"    ? HIGH : LOW);
+  digitalWrite(LED_PIN_Y, color == "yellow" ? HIGH : LOW);
+  digitalWrite(LED_PIN_G, color == "green"  ? HIGH : LOW);
+  appendLog("LED -> " + color);
 }
 
 void reconnect();
@@ -126,8 +141,14 @@ void setup() {
   client.setCallback(callback);
 
   // Configure the GPIO pin as an output
-  pinMode(ledPin23, OUTPUT); 
-  
+  pinMode(ledPin23, OUTPUT);
+
+  // Sensor input, LED outputs — start green (free)
+  pinMode(SENSOR_PIN, INPUT);
+  pinMode(LED_PIN_R, OUTPUT);
+  pinMode(LED_PIN_Y, OUTPUT);
+  pinMode(LED_PIN_G, OUTPUT);
+  setLed("green");
 }
 
 void loop() {
@@ -159,8 +180,21 @@ void loop() {
     client.publish(publish_topic, message.c_str());
   }
 
+  // Read sensor every 2 s; only publish on state change
+  if (millis() - lastSensorRead >= 2000) {
+    lastSensorRead = millis();
+    // KY-032: LOW = obstacle detected = occupied
+    String status = (digitalRead(SENSOR_PIN) == LOW) ? "occupied" : "free";
+    if (status != lastStatus) {
+      lastStatus = status;
+      client.publish(publish_topic, status.c_str(), true);
+      appendLog("Status -> " + status);
+      setLed(status == "occupied" ? "red" : "green");
+    }
+  }
+
    // Supply power to the module to start the auto-flashing sequence
-  digitalWrite(ledPin23, HIGH); 
+  digitalWrite(ledPin23, HIGH);
   delay(5000); // Let it flash through colors for 5 seconds
   
   // Cut power to turn the LED off
