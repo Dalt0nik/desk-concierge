@@ -8,12 +8,10 @@
 
 const char* ssid = "DB-CTS-WORK";
 const char* password = "jq87427@";
-const char* mqtt_server = "10.6.10.36"; 
-const int mqtt_port = 1883;
-const char* publish_topic = "esp32/hackathon/data";
-
-// pins
-const int ledPin23 = 23;
+const char* mqtt_server  = "10.6.10.36";
+const int   mqtt_port    = 1883;
+const char* status_topic = "desk/1/status";
+const char* led_topic    = "desk/1/led";
 
 // Sensor & LED pins
 #define SENSOR_PIN  14   // KY-032 OUT → LOW when obstacle (occupied)
@@ -32,8 +30,6 @@ WebServer server(80);
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-unsigned long lastMsg = 0;
-int value = 0;
 unsigned long lastSensorRead = 0;
 String lastStatus = "";
 
@@ -140,9 +136,6 @@ void setup() {
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(callback);
 
-  // Configure the GPIO pin as an output
-  pinMode(ledPin23, OUTPUT);
-
   // Sensor input, LED outputs — start green (free)
   pinMode(SENSOR_PIN, INPUT);
   pinMode(LED_PIN_R, OUTPUT);
@@ -159,26 +152,12 @@ void loop() {
   Serial.printf("Temp: %.2f C\n", temp_c);
   String tmpstr = "temp is : " + String(temp_c);
   appendLog(tmpstr);
-  delay(2000);
 
-
-   if (!client.connected()) {
+  if (!client.connected()) {
     reconnect();
   }
 
-   client.loop();
-
-  unsigned long now = millis();
-  if (now - lastMsg > 5000) {
-    lastMsg = now;
-    value++;
-
-    String message = "Hello from ESP32 to Docker! Message #" + String(value);
-    Serial.print("Publishing message: ");
-    Serial.println(message);
-    appendLog(message);
-    client.publish(publish_topic, message.c_str());
-  }
+  client.loop();
 
   // Read sensor every 2 s; only publish on state change
   if (millis() - lastSensorRead >= 2000) {
@@ -187,30 +166,19 @@ void loop() {
     String status = (digitalRead(SENSOR_PIN) == LOW) ? "occupied" : "free";
     if (status != lastStatus) {
       lastStatus = status;
-      client.publish(publish_topic, status.c_str(), true);
+      client.publish(status_topic, status.c_str(), true);
       appendLog("Status -> " + status);
-      setLed(status == "occupied" ? "red" : "green");
     }
   }
-
-   // Supply power to the module to start the auto-flashing sequence
-  digitalWrite(ledPin23, HIGH);
-  delay(5000); // Let it flash through colors for 5 seconds
-  
-  // Cut power to turn the LED off
-  digitalWrite(ledPin23, LOW);  
-  delay(2000); // Keep it off for 2 seconds
 
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (unsigned int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
+  String msg;
+  for (unsigned int i = 0; i < length; i++) msg += (char)payload[i];
+  if (String(topic) == led_topic) {
+    setLed(msg);
   }
-  Serial.println();
 }
 
 
@@ -221,6 +189,7 @@ void reconnect() {
     client.setBufferSize(512);
     if (client.connect(clientId.c_str())) {
       Serial.println("connected");
+      client.subscribe(led_topic);
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());

@@ -75,7 +75,7 @@ export function releaseDesk(id: string): { ok: boolean; reason?: string } {
 export function initMqtt() {
   if (g._mqttClient) return;
 
-  const broker = process.env.MQTT_BROKER ?? 'mqtt://10.250.251.10:1883';
+  const broker = process.env.MQTT_BROKER ?? 'mqtt://10.6.10.36:1883';
   const client = mqtt.connect(broker, { reconnectPeriod: 5_000, connectTimeout: 10_000 });
   g._mqttClient = client;
 
@@ -91,11 +91,14 @@ export function initMqtt() {
     const raw = payload.toString();
     if (raw !== 'free' && raw !== 'occupied') return;
 
-    // Sensor data never overrides a manual reservation
     const current = state.get(id);
-    if (current?.status === 'reserved') return;
+    if (current?.status === 'reserved') {
+      g._mqttClient?.publish(`desk/${id}/led`, raw === 'occupied' ? 'red' : 'yellow');
+      return;
+    }
 
     applyStatus(id, raw as DeskStatus);
+    g._mqttClient?.publish(`desk/${id}/led`, raw === 'occupied' ? 'red' : 'green');
   });
 
   client.on('error', err => console.error('[MQTT]', err.message));
