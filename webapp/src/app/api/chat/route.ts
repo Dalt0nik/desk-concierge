@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { getAllStates, reserveDesk, releaseDesk } from '@/lib/state';
-import { DESKS } from '@/config/desks';
+import { DESKS, PODS } from '@/config/desks';
 import type { DeskState } from '@/types';
 
 export const runtime = 'nodejs';
@@ -34,19 +34,24 @@ const TOOLS: Anthropic.Messages.Tool[] = [
 
 function buildSystem(states: DeskState[]): string {
   const byId = Object.fromEntries(states.map(s => [s.id, s.status]));
-  const lines = DESKS.map(d => {
-    const status = byId[d.id] ?? 'free';
-    const feats = d.features.length ? d.features.join(', ') : 'basic';
-    const tag = d.physical ? ' [physical sensor]' : '';
-    return `  Desk ${d.id} (${d.label}) — zone: ${d.zone}, features: ${feats}, status: ${status}${tag}`;
+
+  const podSections = PODS.map(pod => {
+    const desks = DESKS.filter(d => d.pod === pod.id);
+    const lines = desks.map(d => {
+      const status = byId[d.id] ?? 'free';
+      const feats = d.features.length ? d.features.join(', ') : 'none';
+      const tag = d.physical ? ' [physical sensor]' : '';
+      return `    ${d.id} (${d.label}): features=${feats}, status=${status}${tag}`;
+    }).join('\n');
+    const free = desks.filter(d => (byId[d.id] ?? 'free') === 'free').length;
+    return `  Pod ${pod.name} (${pod.zone}, ${free}/${desks.length} free):\n${lines}`;
   }).join('\n');
 
-  return `You are the Desk Concierge for a hot-desking office.
+  return `You are the Desk Concierge for a hot-desking office with 40 desks across 8 team pods.
 
-Current desk map:
-${lines}
+${podSections}
 
-Answer questions about availability, recommend desks based on preferences (quiet zone, window, standing desk, near kitchen, etc.), and reserve or release desks when asked. Only recommend free desks unless asked otherwise. Be concise.`;
+Answer questions about availability, recommend desks based on preferences (quiet, window, standing, near kitchen, dual-monitor, etc.), and reserve or release desks when asked. Reference desks by label (e.g. "A1") or ID. Only recommend free desks unless asked otherwise. Be concise.`;
 }
 
 interface ChatMessage {
