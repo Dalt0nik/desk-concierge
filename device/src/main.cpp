@@ -34,7 +34,7 @@ unsigned long lastSensorRead = 0;
 String lastPublished = "";
 unsigned long lastOccupiedAt = 0;
 
-const unsigned long FREE_DELAY_MS = 2UL * 60UL * 1000UL; // 2 minutes
+const unsigned long FREE_DELAY_MS = 10UL * 1000UL; // 10 seconds
 
 String logs = "";
 
