@@ -80,7 +80,7 @@ export async function POST(request: Request) {
 
     const { messages }: { messages: ChatMessage[] } = await request.json();
 
-    const apiMessages = [
+    const apiMessages: any[] = [
       { role: 'system' as const, content: buildSystem(getAllStates()) },
       ...messages.map(m => ({
         role: m.role,
@@ -96,7 +96,10 @@ export async function POST(request: Request) {
     } as any);
 
     // Agentic loop — handle all tool calls before replying
-    while (res.choices[0]?.finish_reason === 'tool_calls') {
+    while (
+      res.choices[0]?.finish_reason === 'tool_calls' ||
+      res.choices[0]?.finish_reason === 'function_call'
+    ) {
       const toolCalls = res.choices[0].message.tool_calls || [];
 
       const toolResults = toolCalls.map(toolCall => {
@@ -113,10 +116,7 @@ export async function POST(request: Request) {
         };
       });
 
-      apiMessages.push(
-        { role: 'assistant', content: res.choices[0].message.content ?? '' },
-        ...toolResults
-      );
+      apiMessages.push(res.choices[0].message as any, ...toolResults);
 
       res = await client.chat.completions.create({
         model: process.env.AZURE_OPENAI_MODEL || 'gpt-5.4-nano',
