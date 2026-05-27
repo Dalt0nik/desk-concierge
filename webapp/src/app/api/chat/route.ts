@@ -1,33 +1,43 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { AzureOpenAI } from 'openai';
 import { getAllStates, reserveDesk, releaseDesk } from '@/lib/state';
 import { DESKS } from '@/config/desks';
 import type { DeskState } from '@/types';
 
 export const runtime = 'nodejs';
 
-const anthropic = new Anthropic();
+const client = new AzureOpenAI({
+  apiKey: process.env.AZURE_OPENAI_KEY,
+  endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+  apiVersion: '2024-08-01-preview',
+});
 
-const TOOLS: Anthropic.Messages.Tool[] = [
+const TOOLS = [
   {
-    name: 'reserve_desk',
-    description: 'Reserve a free desk. Sets its LED to yellow and marks it reserved.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        desk_id: { type: 'string', description: 'Desk ID, e.g. "3"' },
+    type: 'function' as const,
+    function: {
+      name: 'reserve_desk',
+      description: 'Reserve a free desk. Sets its LED to yellow and marks it reserved.',
+      parameters: {
+        type: 'object' as const,
+        properties: {
+          desk_id: { type: 'string', description: 'Desk ID, e.g. "3"' },
+        },
+        required: ['desk_id'],
       },
-      required: ['desk_id'],
     },
   },
   {
-    name: 'release_desk',
-    description: 'Release a reservation, making the desk free again.',
-    input_schema: {
-      type: 'object' as const,
-      properties: {
-        desk_id: { type: 'string', description: 'Desk ID, e.g. "3"' },
+    type: 'function' as const,
+    function: {
+      name: 'release_desk',
+      description: 'Release a reservation, making the desk free again.',
+      parameters: {
+        type: 'object' as const,
+        properties: {
+          desk_id: { type: 'string', description: 'Desk ID, e.g. "3"' },
+        },
+        required: ['desk_id'],
       },
-      required: ['desk_id'],
     },
   },
 ];
@@ -55,51 +65,69 @@ interface ChatMessage {
 }
 
 export async function POST(request: Request) {
-  const { messages }: { messages: ChatMessage[] } = await request.json();
+  try {
+    if (!process.env.AZURE_OPENAI_KEY || !process.env.AZURE_OPENAI_ENDPOINT) {
+      return Response.json(
+        { error: 'Missing Azure OpenAI configuration. Set AZURE_OPENAI_KEY and AZURE_OPENAI_ENDPOINT in .env.local' },
+        { status: 500 }
+      );
+    }
 
-  const apiMessages: Anthropic.Messages.MessageParam[] = messages.map(m => ({
-    role: m.role,
-    content: m.content,
-  }));
+    const { messages }: { messages: ChatMessage[] } = await request.json();
 
-  let res = await anthropic.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1024,
-    system: buildSystem(getAllStates()),
-    tools: TOOLS,
-    messages: apiMessages,
-  });
+    const apiMessages = [
+      { role: 'system' as const, content: buildSystem(getAllStates()) },
+      ...messages.map(m => ({
+        role: m.role,
+        content: m.content ?? '',
+      })),
+    ];
 
-  // Agentic loop — handle all tool calls before replying
-  while (res.stop_reason === 'tool_use') {
-    const toolBlocks = res.content.filter(
-      (b): b is Anthropic.Messages.ToolUseBlock => b.type === 'tool_use'
-    );
-
-    const results: Anthropic.Messages.ToolResultBlockParam[] = toolBlocks.map(block => {
-      const { desk_id } = block.input as { desk_id: string };
-      const result =
-        block.name === 'reserve_desk' ? reserveDesk(desk_id) :
-        block.name === 'release_desk' ? releaseDesk(desk_id) :
-        { ok: false, reason: 'Unknown tool' };
-
-      return { type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(result) };
-    });
-
-    apiMessages.push(
-      { role: 'assistant', content: res.content },
-      { role: 'user', content: results }
-    );
-
-    res = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
-      system: buildSystem(getAllStates()),
+    let res = await client.chat.completions.create({
+      model: process.env.AZURE_OPENAI_MODEL || 'gpt-5.4-nano',
+      max_completion_tokens: 1024,
       tools: TOOLS,
       messages: apiMessages,
-    });
-  }
+    } as any);
 
-  const text = res.content.find((b): b is Anthropic.Messages.TextBlock => b.type === 'text');
-  return Response.json({ reply: text?.text ?? '' });
+    // Agentic loop — handle all tool calls before replying
+    while (res.choices[0]?.finish_reason === 'tool_calls') {
+      const toolCalls = res.choices[0].message.tool_calls || [];
+
+      const toolResults = toolCalls.map(toolCall => {
+        const { desk_id } = JSON.parse(toolCall.function.arguments);
+        const result =
+          toolCall.function.name === 'reserve_desk' ? reserveDesk(desk_id) :
+          toolCall.function.name === 'release_desk' ? releaseDesk(desk_id) :
+          { ok: false, reason: 'Unknown tool' };
+
+        return {
+          role: 'tool' as const,
+          content: JSON.stringify(result),
+          tool_call_id: toolCall.id,
+        };
+      });
+
+      apiMessages.push(
+        { role: 'assistant', content: res.choices[0].message.content ?? '' },
+        ...toolResults
+      );
+
+      res = await client.chat.completions.create({
+        model: process.env.AZURE_OPENAI_MODEL || 'gpt-5.4-nano',
+        max_completion_tokens: 1024,
+        tools: TOOLS,
+        messages: apiMessages,
+      } as any);
+    }
+
+    const reply = res.choices[0].message.content ?? '';
+    return Response.json({ reply });
+  } catch (error) {
+    console.error('Chat API error:', error);
+    return Response.json(
+      { error: error instanceof Error ? error.message : 'Failed to process chat request' },
+      { status: 500 }
+    );
+  }
 }
