@@ -10,9 +10,9 @@ const STATUS_COLOR: Record<DeskStatus, string> = {
 };
 
 const POD_STYLE: Record<string, { bg: string; border: string }> = {
-  quiet:         { bg: 'rgba(34,197,94,0.04)',   border: '#1a3a1a' },
-  collaborative: { bg: 'rgba(59,130,246,0.04)',  border: '#1a1e3a' },
-  open:          { bg: 'rgba(234,179,8,0.04)',   border: '#3a2e1a' },
+  quiet:         { bg: 'rgba(34,197,94,0.06)',   border: '#1f4d22' },
+  collaborative: { bg: 'rgba(59,130,246,0.06)',  border: '#1e2d5c' },
+  open:          { bg: 'rgba(234,179,8,0.06)',   border: '#4d3c14' },
 };
 
 interface Props {
@@ -41,9 +41,9 @@ export function DeskMap({ states, onReserve, onRelease, highlightTags = [] }: Pr
             padding: '0.6rem',
           }}>
             <div style={{
-              fontSize: '0.58rem', color: '#4b5563',
+              fontSize: '0.72rem', color: '#9ca3af',
               textTransform: 'uppercase', letterSpacing: '0.1em',
-              marginBottom: '0.5rem',
+              marginBottom: '0.5rem', fontWeight: 600,
             }}>
               {pod.name} · {desks.length}
             </div>
@@ -85,7 +85,7 @@ function DeskCard({ desk, status, onReserve, onRelease, highlighted, dimmed }: {
   return (
     <div style={{
       width: 'calc(50% - 0.2rem)',
-      minHeight: 82,
+      minHeight: 96,
       border: `1.5px solid ${highlighted ? '#eab308' : color}`,
       borderRadius: '5px',
       padding: '0.35rem 0.4rem',
@@ -98,7 +98,7 @@ function DeskCard({ desk, status, onReserve, onRelease, highlighted, dimmed }: {
     }}>
       {/* Label + LED */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-        <span style={{ fontWeight: 700, fontSize: '0.78rem' }}>{desk.label}</span>
+        <span style={{ fontWeight: 700, fontSize: '0.875rem' }}>{desk.label}</span>
         <span style={{
           width: '6px', height: '6px', borderRadius: '50%',
           background: color, boxShadow: `0 0 4px ${color}`, flexShrink: 0,
@@ -109,34 +109,34 @@ function DeskCard({ desk, status, onReserve, onRelease, highlighted, dimmed }: {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.15rem', marginBottom: '0.2rem' }}>
         {desk.features.slice(0, 2).map(f => (
           <span key={f} style={{
-            fontSize: '0.48rem', padding: '0.05rem 0.2rem',
-            background: '#1f2937', borderRadius: '3px', color: '#6b7280',
+            fontSize: '0.65rem', padding: '0.1rem 0.3rem',
+            background: '#1f2937', borderRadius: '3px', color: '#94a3b8',
           }}>
             {f}
           </span>
         ))}
         {desk.physical && (
-          <span style={{ fontSize: '0.48rem', color: '#3b82f6' }} title="Physical sensor">●</span>
+          <span style={{ fontSize: '0.65rem', color: '#60a5fa' }} title="Physical sensor">●</span>
         )}
       </div>
 
       {/* Status + button pinned to bottom */}
       <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-        <div style={{ fontSize: '0.58rem', color, fontWeight: 600 }}>{status}</div>
+        <div style={{ fontSize: '0.7rem', color, fontWeight: 600 }}>{status}</div>
         {status === 'free' && (
           <button onClick={onReserve} style={{
-            padding: '0.15rem 0', fontSize: '0.55rem', fontFamily: 'inherit',
+            padding: '0.3rem 0', fontSize: '0.7rem', fontFamily: 'inherit',
             background: '#eab308', color: '#0f0f0f',
-            border: 'none', borderRadius: '3px', fontWeight: 700,
+            border: 'none', borderRadius: '4px', fontWeight: 700,
           }}>
             Reserve
           </button>
         )}
         {status === 'reserved' && (
           <button onClick={onRelease} style={{
-            padding: '0.15rem 0', fontSize: '0.55rem', fontFamily: 'inherit',
-            background: '#1f2937', color: '#9ca3af',
-            border: '1px solid #374151', borderRadius: '3px',
+            padding: '0.3rem 0', fontSize: '0.7rem', fontFamily: 'inherit',
+            background: '#1f2937', color: '#cbd5e1',
+            border: '1px solid #4b5563', borderRadius: '4px',
           }}>
             Release
           </button>
