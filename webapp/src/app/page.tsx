@@ -82,7 +82,7 @@ export default function Home() {
             <span style={{ color: '#22c55e' }}>{counts.free ?? 0} free</span>
             <span style={{ color: '#ef4444' }}>{counts.occupied ?? 0} occupied</span>
             <span style={{ color: '#eab308' }}>{counts.reserved ?? 0} reserved</span>
-            <span style={{ color: '#374151' }}>/ {total} total</span>
+            <span style={{ color: '#6b7280' }}>/ {total} total</span>
           </div>
           {!connected && (
             <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#6b7280' }}>
@@ -98,9 +98,9 @@ export default function Home() {
           flexWrap: 'wrap', flexShrink: 0,
         }}>
           <span style={{
-            fontSize: '0.6rem', color: '#6b7280',
+            fontSize: '0.72rem', color: '#9ca3af',
             textTransform: 'uppercase', letterSpacing: '0.1em',
-            marginRight: '0.25rem',
+            marginRight: '0.25rem', fontWeight: 600,
           }}>
             Filter
           </span>
@@ -111,7 +111,7 @@ export default function Home() {
                 key={tag}
                 onClick={() => toggleTag(tag)}
                 style={{
-                  padding: '0.2rem 0.55rem', fontSize: '0.65rem',
+                  padding: '0.25rem 0.65rem', fontSize: '0.75rem',
                   fontFamily: 'inherit', cursor: 'pointer',
                   background: active ? '#eab308' : '#1f2937',
                   color: active ? '#0f0f0f' : '#9ca3af',
@@ -128,8 +128,8 @@ export default function Home() {
             <button
               onClick={() => setSelectedTags([])}
               style={{
-                marginLeft: '0.25rem', padding: '0.2rem 0.55rem',
-                fontSize: '0.65rem', fontFamily: 'inherit', cursor: 'pointer',
+                marginLeft: '0.25rem', padding: '0.25rem 0.65rem',
+                fontSize: '0.75rem', fontFamily: 'inherit', cursor: 'pointer',
                 background: 'transparent', color: '#6b7280',
                 border: '1px solid transparent', borderRadius: '999px',
               }}
@@ -154,7 +154,7 @@ export default function Home() {
       <div style={{ width: '340px', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
         <div style={{
           padding: '1rem 1.25rem', borderBottom: '1px solid #1f2937',
-          fontSize: '0.7rem', color: '#6b7280',
+          fontSize: '0.8rem', color: '#94a3b8',
           textTransform: 'uppercase', letterSpacing: '0.1em', flexShrink: 0,
         }}>
           AI Concierge · Haiku
