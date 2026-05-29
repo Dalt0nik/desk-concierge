@@ -151,11 +151,6 @@ void loop() {
   ArduinoOTA.handle();
   server.handleClient();
   // Your other code goes here
-  float temp_c = (temprature_sens_read() -32) / 1.8;
-  Serial.printf("Temp: %.2f C\n", temp_c);
-  String tmpstr = "temp is : " + String(temp_c);
-  appendLog(tmpstr);
-
   if (!client.connected()) {
     reconnect();
   }
