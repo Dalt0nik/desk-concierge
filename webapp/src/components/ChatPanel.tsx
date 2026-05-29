@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -68,9 +69,19 @@ export function ChatPanel() {
             background: m.role === 'user' ? '#1d4ed8' : '#1f2937',
             fontSize: '0.8rem',
             lineHeight: 1.55,
-            whiteSpace: 'pre-wrap',
           }}>
-            {m.content}
+            {m.role === 'assistant' ? (
+              <ReactMarkdown
+                components={{
+                  p: ({ children }) => <p style={{ margin: '0 0 0.4em' }}>{children}</p>,
+                  ul: ({ children }) => <ul style={{ margin: '0.2em 0', paddingLeft: '1.2em' }}>{children}</ul>,
+                  li: ({ children }) => <li style={{ marginBottom: '0.15em' }}>{children}</li>,
+                  strong: ({ children }) => <strong style={{ fontWeight: 700 }}>{children}</strong>,
+                }}
+              >
+                {m.content}
+              </ReactMarkdown>
+            ) : m.content}
           </div>
         ))}
         {loading && (

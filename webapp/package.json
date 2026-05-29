@@ -8,11 +8,12 @@
     "start": "next start"
   },
   "dependencies": {
+    "mqtt": "^5.10.1",
     "next": "^15.3.2",
+    "openai": "^4.77.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "openai": "^4.77.0",
-    "mqtt": "^5.10.1"
+    "react-markdown": "^10.1.0"
   },
   "devDependencies": {
     "@types/node": "^22",
